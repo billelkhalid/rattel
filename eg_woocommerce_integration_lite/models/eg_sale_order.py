@@ -201,12 +201,16 @@ class EgSaleOrder(models.Model):
                                                             odoo_sale_order_line_id._cache)
                                                         sale_order_line_obj.create(order_line_values)
                                                 status = "yes"
+                                                if odoo_order_id.state in ('draft','sent'):
+                                                    odoo_order_id.action_confirm()
                                                 sale_order_id = odoo_order_id
                                             else:
                                                 product_list.append(line_item.get("name"))
                                                 text = "This Sale order is create but this products {} is not mapping so not add in sale order line".format(
                                                     product_list)
                                                 sale_order_id = odoo_order_id
+                                                if odoo_order_id.state in ('draft','sent'):
+                                                    odoo_order_id.action_confirm()
                                                 line_partial = True
                                                 line_partial_list.append(line_partial)
                                     else:
