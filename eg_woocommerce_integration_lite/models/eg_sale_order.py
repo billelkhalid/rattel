@@ -49,7 +49,7 @@ class EgSaleOrder(models.Model):
         if cron == "yes":  # New Changes by akash
             instance_ids = self.env["eg.ecom.instance"].search([('provider', '=', 'eg_woocommerce')])
             if instance_id:
-                instance_ids = instance_id.filtered(lambda ln : ln.id == instance_id)
+                instance_ids = instance_ids.filtered(lambda ln : ln.id == instance_id)
         else:
             instance_ids = [instance_id]
         for instance_id in instance_ids:
