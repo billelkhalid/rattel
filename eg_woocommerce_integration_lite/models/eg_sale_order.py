@@ -5,7 +5,7 @@ from odoo import fields, models
 from odoo.exceptions import Warning
 
 _logging = logging.getLogger("===+++=== eCom Sale Order ===+++===")
-
+logger = logging.getLogger(__name__)
 
 class EgSaleOrder(models.Model):
     _inherit = 'eg.sale.order'
@@ -63,7 +63,7 @@ class EgSaleOrder(models.Model):
                     wcapi = woo_api.get_wcapi_connection()
                     if cron == "yes" and woo_api.last_order_date:
                         sale_order_response = wcapi.get(
-                            'orders', params={'per_page': 100, 'page': page, 'after': woo_api.last_order_date})
+                            'orders', params={'per_page': 50, 'page': page, 'after': woo_api.last_order_date})
                     else:
                         sale_order_response = wcapi.get('orders', params={'per_page': 100, 'page': page})
                 except Exception as e:
@@ -78,11 +78,13 @@ class EgSaleOrder(models.Model):
                     last_date_order = datetime.strptime(sale_order_response[0].get("date_created"), "%Y-%m-%dT%H:%M:%S")
                     woo_api.write({"last_order_date": last_date_order})
                 for woo_sale_order_dict in sale_order_response:
+                    logger.info("Here is the sale order woo record id %s", woo_sale_order_dict.get('id'))
                     line_partial = False
                     sale_order_id = None
                     status = "no"
                     text = ""
                     if woo_sale_order_dict.get('status') in ['pending', 'processing', 'on-hold', 'completed']:
+                        logger.info("Creating order with ID %s and status %s", woo_sale_order_dict.get('id'), woo_sale_order_dict.get('status'))
                         eg_sale_order_id = self.search(
                             [('inst_order_id', '=', str(woo_sale_order_dict.get("id"))),
                              ('instance_id', '=', woo_api.id)])
@@ -120,6 +122,7 @@ class EgSaleOrder(models.Model):
                                             'instance_id': woo_api.id,
                                             'company_id' : company_id.id
                                         })
+                                        logger.info("Creating order with ID %s and status %s and sale order id %s", woo_sale_order_dict.get('id'), woo_sale_order_dict.get('status'), odoo_order_id)
                                         product_list = []
                                         for line_item in woo_sale_order_dict.get('line_items'):
                                             eg_product_tmpl_id = self.env['eg.product.template'].search(
@@ -173,7 +176,7 @@ class EgSaleOrder(models.Model):
                                                 order_line_values = odoo_sale_order_line_id._convert_to_write(
                                                     odoo_sale_order_line_id._cache)
                                                 sale_order_line_obj.create(order_line_values)
-
+                                                logger.info("Creating order with ID %s and status %s and sale order id %s and order line %s", woo_sale_order_dict.get('id'), woo_sale_order_dict.get('status'), odoo_order_id, odoo_sale_order_line_id)
                                                 if woo_sale_order_dict.get('coupon_lines'):
                                                     sale_order_line_obj = self.env['sale.order.line']
                                                     for coupon_line_dict in woo_sale_order_dict.get('coupon_lines'):
